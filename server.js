@@ -1,10 +1,18 @@
 var fs = require("fs")
 var restify = require("restify")
 var Package = require("./lib/package")
-var port = Number(process.env.PORT || process.argv[2] || 8080)
+var program = require('commander')
 
 var packageWithoutVersionPattern = /^\/([^@]+)[\/]?$/ // {name}
 var packageFilePattern = /^\/(.*)@(\d+\.\d+\.\d+)[\/]?(.*)$/ // {name}@{version}/{filepath}
+program
+  .version('2.0.0')
+  .option('-p, --port <number>', 'Set the port on which to listen', parseInt)
+  .option('-r, --registry <url>', 'Set a custom registry url')
+  .parse(process.argv)
+
+var port = Number(process.env.PORT || program.port || 8080)
+var registry = program.registry || "http://registry.npmjs.org/"
 
 function serveFile(req, res, next) {
   req.log.info("server", req.url)
@@ -34,7 +42,7 @@ function serveFile(req, res, next) {
 
 function redirectToVersionedPackage(req, res, next) {
   console.log("redirectToVersionedPackage", req.params[0])
-  require("superagent").get("http://registry.npmjs.org/" + req.params[0], function(rez){
+  require("superagent").get(registry + req.params[0], function(rez){
     if (!rez.ok) {
       return res.send(404, {error: "package not found: " + req.params[0]})
     }
