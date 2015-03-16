@@ -27,6 +27,7 @@
     "commander": "^2.7.1",
     "findit": "^2.0.0",
     "handlebars": "^2.0.0",
+    "npm": "^2.7.1",
     "request": "^2.49.0",
     "restify": "^2.8.3",
     "superagent": "^0.21.0",
