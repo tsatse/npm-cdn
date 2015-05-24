@@ -5,12 +5,15 @@ var program = require("commander")
 var npm = require("npm")
 var Package = require("./lib/package")
 
+var defaultRegistryUrl = "http://registry.npmjs.org"
+var defaultCacheDirectory = "/tmp/npm-cdn"
 var packageWithoutVersionPattern = /^\/([^@\/]+)[\/]?(.*)$/ // {name}/{filepath}
 var packageFilePattern = /^\/(.*)@(\d+\.\d+\.\d+)[\/]?(.*)$/ // {name}@{version}/{filepath}
 program
-  .version('2.0.0')
-  .option('-p, --port <number>', 'Set the port on which to listen', parseInt)
-  .option('-r, --registry <url>', 'Set a custom registry url')
+  .version("2.0.0")
+  .option("-p, --port <number>", "Set the port on which to listen", parseInt)
+  .option("-r, --registry <url>", "Set the npm registry url (default is http://" + defaultRegistryUrl +")")
+  .option("-c, --cache-dir <directory>", "Set the cache directory (default is " + defaultCacheDirectory +")")
   .parse(process.argv)
 
 var port = Number(process.env.PORT || program.port || 8080)
@@ -21,7 +24,7 @@ function serveFile(req, res, next) {
   var name =    req.params[0]
   var version = req.params[1]
   var file =    req.params[2]
-  var pkg = new Package(name, version, {registry: registry})
+  var pkg = new Package(name, version, {registry: registry, cacheDir: program.cacheDir || defaultCacheDirectory})
 
   // Show generated index if filename is absent
   if (!file) {
@@ -48,19 +51,19 @@ function redirectToVersionedPackage(req, res, next) {
     var npmPrefix = npm.config.get("prefix")
     var linkedModulePath = path.join(npmPrefix, "lib/node_modules",  req.params[0])
 
-    console.log('checking whether ', linkedModulePath, 'exists')
+    console.log("checking whether ", linkedModulePath, "exists")
     if(fs.existsSync(linkedModulePath)) {
-      console.log('it exists')
-      var pkg = fs.readFileSync(path.join(linkedModulePath, 'package.json'))
-      console.log('just read ', path.join(linkedModulePath, 'package.json'))
+      console.log("it exists")
+      var pkg = fs.readFileSync(path.join(linkedModulePath, "package.json"))
+      console.log("just read ", path.join(linkedModulePath, "package.json"))
       pkg = JSON.parse(pkg)
-      console.log('and parsed it to ', pkg)
+      console.log("and parsed it to ", pkg)
       var redirPath = "/" + pkg.name + "@" + pkg.version;
       if(req.params[1]) {
         redirPath += "/" + req.params[1]
       }
       res.header("Location", redirPath)
-      console.log('now redirecting to ', redirPath)
+      console.log("now redirecting to ", redirPath)
       return res.send(302)
     }
     else {
